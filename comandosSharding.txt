@@ -1,0 +1,58 @@
+Start-Process -FilePath "mongod" -ArgumentList "--configsvr", "--replSet cfg", "--logpath log.cfg0", "--dbpath cfg0", "--port 26050" -WindowStyle Hidden
+Start-Process -FilePath "mongod" -ArgumentList "--configsvr", "--replSet cfg", "--logpath log.cfg1", "--dbpath cfg1", "--port 26051" -WindowStyle Hidden
+Start-Process -FilePath "mongod" -ArgumentList "--configsvr", "--replSet cfg", "--logpath log.cfg2", "--dbpath cfg2", "--port 26052" -WindowStyle Hidden
+
+mongo --port 26050
+	>rs.initiate()
+	rs.add("localhost:26051")
+	rs.add("localhost:26052")
+	exit
+
+Start-Process -FilePath "mongod" -ArgumentList "--shardsvr", "--replSet a", "--dbpath a0", "--port 26000", "--logpath log.a0" -WindowStyle Hidden
+Start-Process -FilePath "mongod" -ArgumentList "--shardsvr", "--replSet a", "--dbpath a1", "--port 26001", "--logpath log.a1" -WindowStyle Hidden
+Start-Process -FilePath "mongod" -ArgumentList "--shardsvr", "--replSet a", "--dbpath a2", "--port 26002", "--logpath log.a2" -WindowStyle Hidden
+Start-Process -FilePath "mongod" -ArgumentList "--shardsvr", "--replSet b", "--dbpath b0", "--port 26100", "--logpath log.b0" -WindowStyle Hidden
+Start-Process -FilePath "mongod" -ArgumentList "--shardsvr", "--replSet b", "--dbpath b1", "--port 26101", "--logpath log.b1" -WindowStyle Hidden
+Start-Process -FilePath "mongod" -ArgumentList "--shardsvr", "--replSet b", "--dbpath b2", "--port 26102", "--logpath log.b2" -WindowStyle Hidden
+
+Start-Process -FilePath "mongod" -ArgumentList "--shardsvr", "--replSet c", "--dbpath c0", "--port 26200", "--logpath log.c0" -WindowStyle Hidden
+Start-Process -FilePath "mongod" -ArgumentList "--shardsvr", "--replSet c", "--dbpath c1", "--port 26201", "--logpath log.c1" -WindowStyle Hidden
+Start-Process -FilePath "mongod" -ArgumentList "--shardsvr", "--replSet c", "--dbpath c2", "--port 26202", "--logpath log.c2" -WindowStyle Hidden
+Start-Process -FilePath "mongod" -ArgumentList "--shardsvr", "--replSet d", "--dbpath d0", "--port 26300", "--logpath log.d0" -WindowStyle Hidden
+Start-Process -FilePath "mongod" -ArgumentList "--shardsvr", "--replSet d", "--dbpath d1", "--port 26301", "--logpath log.d1" -WindowStyle Hidden
+Start-Process -FilePath "mongod" -ArgumentList "--shardsvr", "--replSet d", "--dbpath d2", "--port 26302", "--logpath log.d2" -WindowStyle Hidden
+
+mongo --port 26000
+rs.initiate()
+rs.add("localhost:26001")
+rs.add("localhost:26002")
+
+mongo --port 26100
+rs.initiate()
+rs.add("localhost:26101")
+rs.add("localhost:26102")
+
+mongo --port 26200
+rs.initiate()
+rs.add("localhost:26201")
+rs.add("localhost:26202")
+
+mongo --port 26300
+rs.initiate()
+rs.add("localhost:26301")
+rs.add("localhost:26302")
+
+Start-Process -FilePath "mongos" -ArgumentList "--configdb cfg/localhost:26050,localhost:26051,localhost:26052", "--logpath log.mongos1", "--port 26061" -WindowStyle Hidden
+Start-Process -FilePath "mongos" -ArgumentList "--configdb cfg/localhost:26050,localhost:26051,localhost:26052", "--logpath log.mongos2", "--port 26062" -WindowStyle Hidden
+
+mongo --port 26061
+
+sh.addShard("a/localhost:26000")
+sh.addShard("b/localhost:26100")
+sh.addShard("c/localhost:26200")
+sh.addShard("d/localhost:26300")
+
+sh.enableSharding("shardedLogin")
+sh.status
+sh.shardCollection("shardedLogin.colection",{_id: "hashed"} )
+sh.status()
